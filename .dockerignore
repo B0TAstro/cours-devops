@@ -1,0 +1,12 @@
+node_modules
+coverage
+.git
+.github
+.gitignore
+.eslintrc.json
+Dockerfile
+.dockerignore
+README.md
+Procfile
+*.log
+.DS_Store
