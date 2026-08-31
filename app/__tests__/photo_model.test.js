@@ -8,8 +8,10 @@ describe('getFlickrPhotos(tags, tagmode, callback)', () => {
   test('should return photos', () => {
     // mock the flickr public feed api endpoint
     jest.doMock('got', () => {
-      return {default: { get: jest.fn(() => {
-        const jsonpData = `jsonFlickrFeed({
+      return {
+        default: {
+          get: jest.fn(() => {
+            const jsonpData = `jsonFlickrFeed({
             "items": [
               {
                 "title": "Boating",
@@ -25,10 +27,12 @@ describe('getFlickrPhotos(tags, tagmode, callback)', () => {
               }
             ]
           })`;
-        return Promise.resolve({
-          body: jsonpData
-        });
-      })}};
+            return Promise.resolve({
+              body: jsonpData
+            });
+          })
+        }
+      };
     });
 
     photoModel = require('../../app/photo_model');
@@ -52,9 +56,13 @@ describe('getFlickrPhotos(tags, tagmode, callback)', () => {
   test('should error when api returns 500 http status code', () => {
     // mock the flickr public feed api endpoint and return a 500 error
     jest.doMock('got', () => {
-      return {default: {get: jest.fn(() => {
-        return Promise.reject('Response code 500 (Internal Server Error)');
-      })}};
+      return {
+        default: {
+          get: jest.fn(() => {
+            return Promise.reject('Response code 500 (Internal Server Error)');
+          })
+        }
+      };
     });
 
     photoModel = require('../../app/photo_model');
@@ -67,8 +75,10 @@ describe('getFlickrPhotos(tags, tagmode, callback)', () => {
   test('should error with invalid jsonp data', () => {
     // mock the flickr public feed api endpoint with invalid jsonp data that's missing parentheses
     jest.doMock('got', () => {
-      return {default: {get: jest.fn(() => {
-        const jsonpData = `jsonFlickrFeed{
+      return {
+        default: {
+          get: jest.fn(() => {
+            const jsonpData = `jsonFlickrFeed{
             "items": [
               {
                 "title": "Boating",
@@ -78,10 +88,12 @@ describe('getFlickrPhotos(tags, tagmode, callback)', () => {
               }
             ]
           }`;
-        return Promise.resolve({
-          body: jsonpData
-        });
-      })}};
+            return Promise.resolve({
+              body: jsonpData
+            });
+          })
+        }
+      };
     });
 
     photoModel = require('../../app/photo_model');
