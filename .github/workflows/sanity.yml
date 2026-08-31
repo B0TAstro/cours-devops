@@ -31,6 +31,12 @@ jobs:
       - name: 🧪 Unit tests (Jest + coverage)
         run: npm run jest
 
+      - name: 📈 Send coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./coverage/lcov.info
+
       - name: 📊 Upload the coverage report
         if: always()
         uses: actions/upload-artifact@v4
