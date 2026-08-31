@@ -8,6 +8,10 @@
 
     <% if (photos.length) { %>
 
+    <form method="post" action="/zip?tags=<%= tagsParameter %>&tagmode=<%= tagmodeParameter %>">
+        <button type="submit">Download ZIP</button>
+    </form>
+
       <ul>
         <% photos.forEach(function (photo) { %>
           <li class="list-unstyled">

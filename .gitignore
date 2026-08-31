@@ -16,3 +16,8 @@ npm-debug.log*
 .DS_Store
 .idea/
 .vscode/
+
+# Secrets
+secrets/
+*.json.key
+ecni2-2026-847ba0d4ffd0.json

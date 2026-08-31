@@ -1,3 +1,6 @@
+const dotenv = require('dotenv');
+dotenv.config({ quiet: true });
+
 const express = require('express');
 const favicon = require('serve-favicon');
 const path = require('path');
