@@ -3,6 +3,7 @@ name: 🚧 Publish staging image
 on:
   push:
     branches: [develop]
+  workflow_dispatch:
 
 jobs:
   publish-staging-image:
