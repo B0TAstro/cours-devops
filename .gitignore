@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Rapport de couverture (régénéré par `npm test`)
+coverage/
+
 # Logs
 *.log
 npm-debug.log*
