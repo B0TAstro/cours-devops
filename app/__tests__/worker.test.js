@@ -3,6 +3,11 @@
 const mockOn = jest.fn();
 const mockSubscription = jest.fn(() => ({ on: mockOn }));
 
+// the worker pulls in got (an ESM-only package jest cannot parse) through
+// photo_archive
+jest.mock('../../app/photo_archive');
+jest.mock('../../app/storage');
+
 jest.mock('@google-cloud/pubsub', () => ({
   PubSub: jest.fn(() => ({ subscription: mockSubscription }))
 }));
@@ -37,9 +42,22 @@ describe('listenForMessages(subscriptionNameOrId)', () => {
       ack: jest.fn()
     };
 
-    handlerFor('message')(message);
+    // the handler now acks only once the archive is built and uploaded
+    return handlerFor('message')(message).then(() => {
+      expect(message.ack).toHaveBeenCalled();
+    });
+  });
 
-    expect(message.ack).toHaveBeenCalled();
+  test('should acknowledge a message even when archiving fails', () => {
+    const message = {
+      id: 'message-id-2',
+      data: Buffer.from(JSON.stringify({ tags: 'error' })),
+      ack: jest.fn()
+    };
+
+    return handlerFor('message')(message).then(() => {
+      expect(message.ack).toHaveBeenCalled();
+    });
   });
 
   test('should survive a subscription error without throwing', () => {

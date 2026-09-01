@@ -2,6 +2,9 @@ const request = require('supertest');
 
 jest.mock('../../app/photo_model');
 jest.mock('../../app/queue_producer');
+// server.js loads the worker, which pulls in got (an ESM-only package jest
+// cannot parse); mocking the archive keeps it out of the module graph
+jest.mock('../../app/photo_archive');
 const app = require('../../app/server');
 
 describe('index route', () => {
