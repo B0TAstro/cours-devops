@@ -1,3 +1,6 @@
+const dotenv = require('dotenv');
+dotenv.config({ quiet: true });
+
 const express = require('express');
 const favicon = require('serve-favicon');
 const path = require('path');
@@ -16,6 +19,7 @@ app.set('view engine', 'html');
 
 // load route
 require('./route')(app);
+require('./worker');
 
 // server
 const port = process.env.PORT || 3000;
