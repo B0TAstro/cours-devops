@@ -14,6 +14,11 @@ jobs:
       contents: read
       packages: write
 
+    # the secrets context is not available in a step-level `if`, so the hook is
+    # exposed here and the step tests the env context instead
+    env:
+      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_PRODUCTION }}
+
     steps:
       - name: 📥 Checkout the code
         uses: actions/checkout@v4
@@ -31,9 +36,7 @@ jobs:
           docker push ghcr.io/b0tastro/cours-devops:production
 
       - name: ☁️ Trigger the render production deploy
-        if: ${{ secrets.RENDER_DEPLOY_HOOK_PRODUCTION != '' }}
-        env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_PRODUCTION }}
+        if: ${{ env.RENDER_DEPLOY_HOOK != '' }}
         run: |
           curl -fsS -X POST "$RENDER_DEPLOY_HOOK" > /dev/null
           echo "Render production deploy triggered"
