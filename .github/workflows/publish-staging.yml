@@ -29,3 +29,11 @@ jobs:
         run: |
           docker build . --tag ghcr.io/b0tastro/cours-devops:staging
           docker push ghcr.io/b0tastro/cours-devops:staging
+
+      - name: ☁️ Trigger the render staging deploy
+        if: ${{ secrets.RENDER_DEPLOY_HOOK_STAGING != '' }}
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_STAGING }}
+        run: |
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK" > /dev/null
+          echo "Render staging deploy triggered"

@@ -29,3 +29,11 @@ jobs:
         run: |
           docker build . --tag ghcr.io/b0tastro/cours-devops:production
           docker push ghcr.io/b0tastro/cours-devops:production
+
+      - name: ☁️ Trigger the render production deploy
+        if: ${{ secrets.RENDER_DEPLOY_HOOK_PRODUCTION != '' }}
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_PRODUCTION }}
+        run: |
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK" > /dev/null
+          echo "Render production deploy triggered"
