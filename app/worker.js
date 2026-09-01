@@ -22,10 +22,12 @@ function listenForMessages(subscriptionNameOrId) {
     return photoArchive
       .createArchiveStream(tags, tagmode)
       .then(archive => storage.uploadArchiveStream(archive))
-      .then(name => {
-        jobStore.saveJob(tags, name);
-        console.log(`[worker] archive ready for "${tags}": ${name}`);
-      })
+      .then(name =>
+        storage
+          .getDownloadUrl(name)
+          .then(url => jobStore.saveJob(tags, name, url))
+          .then(() => console.log(`[worker] archive ready for "${tags}": ${name}`))
+      )
       .catch(error => {
         console.log(`[worker] failed to archive "${tags}"`, error);
       })

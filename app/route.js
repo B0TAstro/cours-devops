@@ -37,21 +37,21 @@ function route(app) {
         ejsLocalVariables.photos = photos;
         ejsLocalVariables.searchResults = true;
 
-        // the worker records the archive name once it is done; until then
-        // there is simply no link to show
-        const name = jobStore.findJob(tags);
-
-        if (!name) {
+        return jobStore.findJob(tags);
+      })
+      .then(job => {
+        if (!job) {
           return res.render('index', ejsLocalVariables);
         }
 
-        return storage.getDownloadUrl(name).then(downloadUrl => {
+        // rebuild the link from the stored gcs path: the saved url only lives for two days
+        return storage.getDownloadUrl(job.path).then(downloadUrl => {
           ejsLocalVariables.downloadUrl = downloadUrl;
           return res.render('index', ejsLocalVariables);
         });
       })
       .catch(error => {
-        console.log('aspdfonaposd', error);
+        console.log('failed to render the search results', error);
         return res.status(500).send({ error });
       });
   });

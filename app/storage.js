@@ -10,8 +10,7 @@ function bucket() {
   return storage.bucket(process.env.STORAGE_BUCKET);
 }
 
-// Pipes a readable zip stream straight into the bucket and resolves with the
-// object name it was stored under. Nothing is buffered on the way.
+// Pipes a readable zip stream straight into the bucket and resolves with the object name it was stored under
 function uploadArchiveStream(archive) {
   const name = `zips/${crypto.randomUUID()}.zip`;
   const upload = bucket()
@@ -33,7 +32,6 @@ function uploadArchiveStream(archive) {
   });
 }
 
-// Part V: a temporary read link on the stored archive.
 function getDownloadUrl(name) {
   return bucket()
     .file(name)
