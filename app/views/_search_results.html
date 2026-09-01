@@ -12,6 +12,12 @@
         <button type="submit">Download ZIP</button>
     </form>
 
+    <% if (downloadUrl) { %>
+      <p class="zip-download">
+        <a href="<%= downloadUrl %>">Your archive is ready &mdash; download it</a>
+      </p>
+    <% } %>
+
       <ul>
         <% photos.forEach(function (photo) { %>
           <li class="list-unstyled">

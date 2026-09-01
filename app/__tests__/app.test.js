@@ -5,6 +5,8 @@ jest.mock('../../app/queue_producer');
 // server.js loads the worker, which pulls in got (an ESM-only package jest
 // cannot parse); mocking the archive keeps it out of the module graph
 jest.mock('../../app/photo_archive');
+jest.mock('../../app/storage');
+const jobStore = require('../../app/job_store');
 const app = require('../../app/server');
 
 describe('index route', () => {
@@ -43,6 +45,26 @@ describe('index route', () => {
       .expect(200)
       .then(response => {
         expect(response.text).toMatch(/<div class="alert alert-danger">/);
+      });
+  });
+
+  test('should show a download link once the worker archived those tags', () => {
+    jobStore.saveJob('archived', 'zips/ready.zip');
+
+    return request(app)
+      .get('/?tags=archived&tagmode=all')
+      .expect(200)
+      .then(response => {
+        expect(response.text).toMatch(/https:\/\/storage.example\/signed/);
+      });
+  });
+
+  test('should not show a download link when no archive exists yet', () => {
+    return request(app)
+      .get('/?tags=california&tagmode=all')
+      .expect(200)
+      .then(response => {
+        expect(response.text).not.toMatch(/zip-download/);
       });
   });
 

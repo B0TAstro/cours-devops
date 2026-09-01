@@ -2,6 +2,8 @@ const querystring = require('querystring');
 const formValidator = require('./form_validator');
 const photoModel = require('./photo_model');
 const queueProducer = require('./queue_producer');
+const storage = require('./storage');
+const jobStore = require('./job_store');
 
 function route(app) {
   app.get('/', (req, res) => {
@@ -13,7 +15,8 @@ function route(app) {
       tagmodeParameter: tagmode || '',
       photos: [],
       searchResults: false,
-      invalidParameters: false
+      invalidParameters: false,
+      downloadUrl: null
     };
 
     // if no input params are passed in then render the view with out querying the api
@@ -33,7 +36,19 @@ function route(app) {
       .then(photos => {
         ejsLocalVariables.photos = photos;
         ejsLocalVariables.searchResults = true;
-        return res.render('index', ejsLocalVariables);
+
+        // the worker records the archive name once it is done; until then
+        // there is simply no link to show
+        const name = jobStore.findJob(tags);
+
+        if (!name) {
+          return res.render('index', ejsLocalVariables);
+        }
+
+        return storage.getDownloadUrl(name).then(downloadUrl => {
+          ejsLocalVariables.downloadUrl = downloadUrl;
+          return res.render('index', ejsLocalVariables);
+        });
       })
       .catch(error => {
         console.log('aspdfonaposd', error);
