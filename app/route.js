@@ -45,10 +45,10 @@ function route(app) {
     const tags = req.query.tags;
     const tagmode = req.query.tagmode;
 
-    console.log(`[zip] request received — tags: "${tags}", tagmode: "${tagmode}"`);
+    console.log(`[zip] request received -- tags: "${tags}", tagmode: "${tagmode}"`);
 
     if (!formValidator.hasValidFlickrAPIParams(tags, tagmode)) {
-      console.log('[zip] rejected — invalid tags or tagmode');
+      console.log('[zip] rejected -- invalid tags or tagmode');
       return res.status(400).send({
         error: 'Invalid value for "tags" or "tagmode" input parameters'
       });
@@ -57,7 +57,7 @@ function route(app) {
     return queueProducer
       .publishZipRequest(tags, tagmode)
       .then(messageId => {
-        console.log(`[zip] published to ${process.env.PUBSUB_VAR} — messageId: ${messageId}`);
+        console.log(`[zip] published to ${process.env.PUBSUB_VAR} -- messageId: ${messageId}`);
         const qs = querystring.stringify({ tags, tagmode });
         return res.redirect(303, `/?${qs}`);
       })
