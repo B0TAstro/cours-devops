@@ -1,19 +1,17 @@
-<hr>
+<hr />
 
 <div class="panel panel-default generated-zips">
   <div class="panel-heading">
     <h3 class="panel-title" id="zips-title">Archives déjà générées</h3>
   </div>
   <div class="panel-body">
-
     <p id="zips-status" class="text-muted">Chargement des archives&hellip;</p>
     <ul id="zips-list" class="list-unstyled"></ul>
-
   </div>
 </div>
 
 <script>
-  (function () {
+  (function() {
     var title = document.getElementById('zips-title');
     var status = document.getElementById('zips-status');
     var list = document.getElementById('zips-list');
@@ -23,64 +21,99 @@
 
     if (current.get('tags')) {
       query.set('tags', current.get('tags'));
-      title.textContent = 'Archives générées pour « ' + current.get('tags') + ' »';
+      title.textContent =
+        'Archives générées pour « ' + current.get('tags') + ' »';
     }
 
-    fetch('/zips' + (query.toString() ? '?' + query.toString() : ''))
-      .then(function (response) {
-        if (!response.ok) {
-          throw new Error('HTTP ' + response.status);
-        }
+    var endpoint = '/zips' + (query.toString() ? '?' + query.toString() : '');
 
-        return response.json();
-      })
-      .then(function (payload) {
-        if (!payload.total) {
-          status.textContent = 'Aucune archive enregistrée pour cette recherche.';
-          return;
-        }
+    window.addEventListener('auth-changed', function(event) {
+      var user = event.detail.user;
 
-        payload.zips.forEach(function (zip) {
-          var item = document.createElement('li');
-          var label = zip.tags || zip.filename || 'archive';
+      // the observer refires on every sign-in and sign-out, so start clean
+      list.innerHTML = '';
+      status.style.display = '';
+      status.className = 'text-muted';
 
-          if (zip.url) {
-            var link = document.createElement('a');
-            link.href = zip.url;
-            link.textContent = label;
-            item.appendChild(link);
-          } else {
-            var plain = document.createElement('span');
-            plain.textContent = label;
-            item.appendChild(plain);
+      if (!user) {
+        status.textContent = 'Connecte-toi pour voir tes archives.';
+        return;
+      }
 
-            var gone = document.createElement('span');
-            gone.className = 'label label-default';
-            gone.textContent = 'archive introuvable';
-            item.appendChild(document.createTextNode(' '));
-            item.appendChild(gone);
+      status.textContent = 'Chargement des archives…';
+
+      // ask for the token on each request: it expires after an hour and
+      // getIdToken refreshes it transparently when needed
+      user
+        .getIdToken()
+        .then(function(token) {
+          return fetch(endpoint, {
+            headers: { Authorization: 'Bearer ' + token }
+          });
+        })
+        .then(function(response) {
+          if (!response.ok) {
+            throw new Error('HTTP ' + response.status);
           }
 
-          var meta = document.createElement('small');
-          meta.className = 'text-muted';
-          meta.textContent =
-            ' — ' + (zip.createdAt ? new Date(zip.createdAt).toLocaleString() : 'date inconnue');
-          item.appendChild(meta);
+          return response.json();
+        })
+        .then(function(payload) {
+          if (!payload.total) {
+            status.textContent =
+              'Aucune archive enregistrée pour cette recherche.';
+            return;
+          }
 
-          list.appendChild(item);
+          payload.zips.forEach(function(zip) {
+            var item = document.createElement('li');
+            var label = zip.tags || zip.filename || 'archive';
+
+            if (zip.url) {
+              var link = document.createElement('a');
+              link.href = zip.url;
+              // textContent and not innerHTML: the tags come from user input
+              link.textContent = label;
+              item.appendChild(link);
+            } else {
+              var plain = document.createElement('span');
+              plain.textContent = label;
+              item.appendChild(plain);
+
+              var gone = document.createElement('span');
+              gone.className = 'label label-default';
+              gone.textContent = 'archive introuvable';
+              item.appendChild(document.createTextNode(' '));
+              item.appendChild(gone);
+            }
+
+            var meta = document.createElement('small');
+            meta.className = 'text-muted';
+            meta.textContent =
+              ' — ' +
+              (zip.createdAt
+                ? new Date(zip.createdAt).toLocaleString()
+                : 'date inconnue');
+            item.appendChild(meta);
+
+            list.appendChild(item);
+          });
+
+          if (payload.returned < payload.total) {
+            status.textContent =
+              payload.returned +
+              ' archives affichées sur ' +
+              payload.total +
+              ' enregistrées.';
+          } else {
+            status.style.display = 'none';
+          }
+        })
+        .catch(function(error) {
+          status.className = 'text-danger';
+          status.textContent = 'Impossible de charger les archives.';
+          console.log('failed to fetch /zips', error);
         });
-
-        if (payload.returned < payload.total) {
-          status.textContent =
-            payload.returned + ' archives affichées sur ' + payload.total + ' enregistrées.';
-        } else {
-          status.style.display = 'none';
-        }
-      })
-      .catch(function (error) {
-        status.className = 'text-danger';
-        status.textContent = 'Impossible de charger les archives.';
-        console.log('failed to fetch /zips', error);
-      });
+    });
   })();
 </script>

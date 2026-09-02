@@ -4,6 +4,7 @@ const photoModel = require('./photo_model');
 const queueProducer = require('./queue_producer');
 const storage = require('./storage');
 const jobStore = require('./job_store');
+const { requireUser } = require('./auth');
 
 const ZIPS_PAGE_SIZE = 100;
 
@@ -58,7 +59,7 @@ function route(app) {
       });
   });
 
-  app.post('/zip', (req, res) => {
+  app.post('/zip', requireUser, (req, res) => {
     const tags = req.query.tags;
     const tagmode = req.query.tagmode;
 
@@ -84,7 +85,7 @@ function route(app) {
       });
   });
 
-  app.get('/zips', (req, res) => {
+  app.get('/zips', requireUser, (req, res) => {
     const tags = req.query.tags;
     return jobStore
       .listJobs()
