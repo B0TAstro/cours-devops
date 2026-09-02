@@ -19,7 +19,20 @@ function saveJob(tags, name, url) {
   });
 }
 
-// Reads every archive recorded under /tom into a array
+function normalizeJob(record, filenameKey) {
+  if (!record) {
+    return null;
+  }
+
+  const createdAt = typeof record.createdAt === 'number' ? record.createdAt : Date.parse(record.createdAt);
+  return {
+    tags: typeof record.tags === 'string' ? record.tags : null,
+    filename: record.filename || filenameKey,
+    path: typeof record.path === 'string' ? record.path : null,
+    createdAt: Number.isNaN(createdAt) ? 0 : createdAt
+  };
+}
+
 async function listJobs() {
   const snapshot = await database.ref('/tom').get();
   const jobs = [];
@@ -27,7 +40,10 @@ async function listJobs() {
   // two levels to walk: /tom/<zippedAt>/<filename>
   snapshot.forEach(byTime => {
     byTime.forEach(byFile => {
-      jobs.push(byFile.val());
+      const job = normalizeJob(byFile.val(), byFile.key);
+      if (job) {
+        jobs.push(job);
+      }
     });
   });
 
@@ -36,10 +52,11 @@ async function listJobs() {
 
 async function findJob(tags) {
   const jobs = await listJobs();
-  return jobs.find(job => job.tags === tags);
+  return jobs.find(job => job.path && job.tags === tags);
 }
 
 module.exports = {
   saveJob,
+  listJobs,
   findJob
 };

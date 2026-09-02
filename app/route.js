@@ -5,6 +5,8 @@ const queueProducer = require('./queue_producer');
 const storage = require('./storage');
 const jobStore = require('./job_store');
 
+const ZIPS_PAGE_SIZE = 100;
+
 function route(app) {
   app.get('/', (req, res) => {
     const tags = req.query.tags;
@@ -78,6 +80,37 @@ function route(app) {
       })
       .catch(error => {
         console.log('failed to publish the zip request', error);
+        return res.status(500).send({ error: 'Internal server error' });
+      });
+  });
+
+  app.get('/zips', (req, res) => {
+    const tags = req.query.tags;
+    return jobStore
+      .listJobs()
+      .then(jobs => {
+        const matching = tags ? jobs.filter(job => job.tags === tags) : jobs;
+        const page = matching.slice(0, ZIPS_PAGE_SIZE);
+
+        return Promise.all(
+          page.map(job =>
+            (job.path ? storage.getDownloadUrl(job.path) : Promise.resolve(null)).then(url => ({
+              tags: job.tags,
+              filename: job.filename,
+              createdAt: job.createdAt,
+              url
+            }))
+          )
+        ).then(zips =>
+          res.json({
+            total: matching.length,
+            returned: zips.length,
+            zips
+          })
+        );
+      })
+      .catch(error => {
+        console.log('failed to list the generated zips', error);
         return res.status(500).send({ error: 'Internal server error' });
       });
   });
