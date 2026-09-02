@@ -8,9 +8,65 @@
 
     <% if (photos.length) { %>
 
-    <form method="post" action="/zip?tags=<%= tagsParameter %>&tagmode=<%= tagmodeParameter %>">
-        <button type="submit">Download ZIP</button>
-    </form>
+    <!-- a native form post cannot carry an Authorization header, and /zip is
+         token protected, so the request is made from javascript instead -->
+    <button type="button" id="zip-submit" disabled>Download ZIP</button>
+    <span id="zip-feedback" class="text-muted"></span>
+
+    <script>
+      (function() {
+        var button = document.getElementById('zip-submit');
+        var feedback = document.getElementById('zip-feedback');
+        var currentUser = null;
+
+        // build the target from the address bar rather than interpolating user
+        // input into a javascript string
+        var current = new URLSearchParams(window.location.search);
+        var target =
+          '/zip?' +
+          new URLSearchParams({
+            tags: current.get('tags') || '',
+            tagmode: current.get('tagmode') || ''
+          }).toString();
+
+        // same event the zips list listens to: the auth partial owns the state
+        window.addEventListener('auth-changed', function(event) {
+          currentUser = event.detail.user;
+          button.disabled = !currentUser;
+          feedback.textContent = currentUser
+            ? ''
+            : 'Connecte-toi pour générer un zip.';
+        });
+
+        button.onclick = function() {
+          button.disabled = true;
+          feedback.textContent = 'Génération lancée…';
+
+          currentUser
+            .getIdToken()
+            .then(function(token) {
+              return fetch(target, {
+                method: 'POST',
+                headers: { Authorization: 'Bearer ' + token }
+              });
+            })
+            .then(function(response) {
+              if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+              }
+
+              feedback.textContent =
+                'Génération lancée, recharge la page dans quelques secondes.';
+            })
+            .catch(function(error) {
+              button.disabled = false;
+              feedback.className = 'text-danger';
+              feedback.textContent = 'Échec du lancement.';
+              console.log('failed to queue the zip', error);
+            });
+        };
+      })();
+    </script>
 
     <% if (downloadUrl) { %>
       <p class="zip-download">

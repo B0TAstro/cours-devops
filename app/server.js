@@ -16,6 +16,7 @@ app.use('/coverage', express.static(path.join(__dirname, '..', 'coverage')));
 app.engine('.html', require('ejs').__express);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'html');
+app.locals.firebaseConfigJson = require('./web_config').serializeWebConfig();
 
 // load route
 require('./route')(app);

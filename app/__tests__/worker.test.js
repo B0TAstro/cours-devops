@@ -7,6 +7,7 @@ const mockSubscription = jest.fn(() => ({ on: mockOn }));
 // photo_archive
 jest.mock('../../app/photo_archive');
 jest.mock('../../app/storage');
+jest.mock('../../app/firebase');
 
 jest.mock('@google-cloud/pubsub', () => ({
   PubSub: jest.fn(() => ({ subscription: mockSubscription }))

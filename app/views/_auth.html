@@ -1,0 +1,57 @@
+<div class="well" id="auth-box">
+  <span id="auth-status" class="text-muted"
+    >Vérification de la session&hellip;</span
+  >
+  <button
+    type="button"
+    class="btn btn-primary"
+    id="auth-signin"
+    style="display: none"
+  >
+    Se connecter avec Google
+  </button>
+  <button
+    type="button"
+    class="btn btn-default"
+    id="auth-signout"
+    style="display: none"
+  >
+    Se déconnecter
+  </button>
+</div>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js';
+  import {
+    getAuth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signOut,
+    onAuthStateChanged
+  } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js';
+
+  const firebaseConfig = <%- firebaseConfigJson %>;
+
+  const auth = getAuth(initializeApp(firebaseConfig));
+  const provider = new GoogleAuthProvider();
+
+  onAuthStateChanged(auth, user => {
+    window.dispatchEvent(new CustomEvent('auth-changed', { detail: { user } }));
+    if (user) {
+      document.querySelector('#auth-signout').style.display = 'inline';
+      document.querySelector('#auth-signin').style.display = 'none';
+      document.querySelector('#auth-status').textContent = `Connecté en tant que ${user.email}`;
+      user.getIdToken().then(token => console.log('ID token:', token));
+
+    } else {
+      document.querySelector('#auth-status').textContent = 'Non connecté';
+      document.querySelector('#auth-signin').style.display = 'inline';
+      document.querySelector('#auth-signout').style.display = 'none';
+    }
+  });
+  document.getElementById('auth-signin').onclick = () =>
+    signInWithPopup(auth, provider).catch(e =>
+      console.log('signin failed', e.code)
+    );
+  document.getElementById('auth-signout').onclick = () => signOut(auth);
+</script>

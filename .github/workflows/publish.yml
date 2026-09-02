@@ -14,8 +14,6 @@ jobs:
       contents: read
       packages: write
 
-    # the secrets context is not available in a step-level `if`, so the hook is
-    # exposed here and the step tests the env context instead
     env:
       RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_PRODUCTION }}
 

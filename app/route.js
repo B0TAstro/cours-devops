@@ -4,6 +4,10 @@ const photoModel = require('./photo_model');
 const queueProducer = require('./queue_producer');
 const storage = require('./storage');
 const jobStore = require('./job_store');
+const { requireUser } = require('./auth');
+const { rateLimit } = require('./rate_limiter');
+
+const ZIPS_PAGE_SIZE = 100;
 
 function route(app) {
   app.get('/', (req, res) => {
@@ -37,26 +41,26 @@ function route(app) {
         ejsLocalVariables.photos = photos;
         ejsLocalVariables.searchResults = true;
 
-        // the worker records the archive name once it is done; until then
-        // there is simply no link to show
-        const name = jobStore.findJob(tags);
-
-        if (!name) {
+        return jobStore.findJob(tags);
+      })
+      .then(job => {
+        if (!job) {
           return res.render('index', ejsLocalVariables);
         }
 
-        return storage.getDownloadUrl(name).then(downloadUrl => {
+        // rebuild the link from the stored gcs path: the saved url only lives for two days
+        return storage.getDownloadUrl(job.path).then(downloadUrl => {
           ejsLocalVariables.downloadUrl = downloadUrl;
           return res.render('index', ejsLocalVariables);
         });
       })
       .catch(error => {
-        console.log('aspdfonaposd', error);
+        console.log('failed to render the search results', error);
         return res.status(500).send({ error });
       });
   });
 
-  app.post('/zip', (req, res) => {
+  app.post('/zip', rateLimit, requireUser, (req, res) => {
     const tags = req.query.tags;
     const tagmode = req.query.tagmode;
 
@@ -78,6 +82,37 @@ function route(app) {
       })
       .catch(error => {
         console.log('failed to publish the zip request', error);
+        return res.status(500).send({ error: 'Internal server error' });
+      });
+  });
+
+  app.get('/zips', requireUser, (req, res) => {
+    const tags = req.query.tags;
+    return jobStore
+      .listJobs()
+      .then(jobs => {
+        const matching = tags ? jobs.filter(job => job.tags === tags) : jobs;
+        const page = matching.slice(0, ZIPS_PAGE_SIZE);
+
+        return Promise.all(
+          page.map(job =>
+            (job.path ? storage.getDownloadUrl(job.path) : Promise.resolve(null)).then(url => ({
+              tags: job.tags,
+              filename: job.filename,
+              createdAt: job.createdAt,
+              url
+            }))
+          )
+        ).then(zips =>
+          res.json({
+            total: matching.length,
+            returned: zips.length,
+            zips
+          })
+        );
+      })
+      .catch(error => {
+        console.log('failed to list the generated zips', error);
         return res.status(500).send({ error: 'Internal server error' });
       });
   });
