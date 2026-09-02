@@ -1,7 +1,14 @@
 'use strict';
 
+const crypto = require('crypto');
 const { getAuth } = require('firebase-admin/auth');
 const { firebaseApp } = require('./firebase');
+
+function timingSafeEqualString(a, b) {
+  const digest = value => crypto.createHash('sha256').update(value).digest();
+
+  return crypto.timingSafeEqual(digest(a), digest(b));
+}
 
 function bearerToken(req) {
   const [scheme, token] = (req.headers.authorization || '').split(' ');
@@ -28,6 +35,23 @@ function requireUser(req, res, next) {
     });
 }
 
+function requireApiKey(req, res, next) {
+  const token = bearerToken(req);
+  const expected = process.env.MCP_API_KEY;
+
+  if (!expected) {
+    console.log('[auth] MCP_API_KEY is not set, refusing every mcp call');
+    return res.status(503).send({ error: 'Server not configured' });
+  }
+
+  if (!token || !timingSafeEqualString(token, expected)) {
+    return res.status(401).send({ error: 'Invalid api key' });
+  }
+
+  return next();
+}
+
 module.exports = {
-  requireUser
+  requireUser,
+  requireApiKey
 };

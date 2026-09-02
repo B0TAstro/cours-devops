@@ -1,13 +1,18 @@
 const querystring = require('querystring');
+const { NodeStreamableHTTPServerTransport } = require('@modelcontextprotocol/node');
 const formValidator = require('./form_validator');
 const photoModel = require('./photo_model');
 const queueProducer = require('./queue_producer');
 const storage = require('./storage');
 const jobStore = require('./job_store');
-const { requireUser } = require('./auth');
+const { requireUser, requireApiKey } = require('./auth');
 const { rateLimit } = require('./rate_limiter');
+const { createServer } = require('./mcp');
 
 const ZIPS_PAGE_SIZE = 100;
+
+// one server for the process, the transport is what is created per request
+const mcpServer = createServer();
 
 function route(app) {
   app.get('/', (req, res) => {
@@ -115,6 +120,23 @@ function route(app) {
         console.log('failed to list the generated zips', error);
         return res.status(500).send({ error: 'Internal server error' });
       });
+  });
+
+  app.post('/mcp', requireApiKey, async (req, res) => {
+    try {
+      const transport = new NodeStreamableHTTPServerTransport({
+        sessionIdGenerator: undefined
+      });
+
+      await mcpServer.connect(transport);
+      await transport.handleRequest(req, res);
+    } catch (error) {
+      console.log('[mcp] request failed', error);
+
+      if (!res.headersSent) {
+        res.status(500).send({ error: 'Internal server error' });
+      }
+    }
   });
 }
 
