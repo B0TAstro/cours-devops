@@ -11,6 +11,7 @@ jest.mock('../../app/storage');
 jest.mock('../../app/firebase');
 jest.mock('../../app/web_config');
 jest.mock('../../app/auth');
+jest.mock('../../app/rate_limiter');
 const firebase = require('../../app/firebase');
 const jobStore = require('../../app/job_store');
 const app = require('../../app/server');

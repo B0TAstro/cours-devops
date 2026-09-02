@@ -5,6 +5,7 @@ const queueProducer = require('./queue_producer');
 const storage = require('./storage');
 const jobStore = require('./job_store');
 const { requireUser } = require('./auth');
+const { rateLimit } = require('./rate_limiter');
 
 const ZIPS_PAGE_SIZE = 100;
 
@@ -59,7 +60,7 @@ function route(app) {
       });
   });
 
-  app.post('/zip', requireUser, (req, res) => {
+  app.post('/zip', rateLimit, requireUser, (req, res) => {
     const tags = req.query.tags;
     const tagmode = req.query.tagmode;
 
