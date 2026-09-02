@@ -10,8 +10,6 @@ const { rateLimit } = require('./rate_limiter');
 const { createServer } = require('./mcp');
 
 const ZIPS_PAGE_SIZE = 100;
-
-// one server for the process, the transport is what is created per request
 const mcpServer = createServer();
 
 function route(app) {
